@@ -1,0 +1,302 @@
+@sparql
+
+
+
+
+
+
+
+===========
+Negation
+===========
+
+
+SELECT ?a WHERE {
+    ?a a <type/1>.
+    FILTER NOT EXISTS { ?a a <type/2> . }
+}
+
+
+
+NEGATION IN 1.0
+
+SELECT ?name
+ WHERE { ?x foaf:givenName  ?name .
+         OPTIONAL { ?x dc:date ?date } .
+         FILTER (!bound(?date)) }
+
+
+ On data.nature.com
+
+ select  (count (DISTINCT ?catalogue) as ?count)
+ where {
+ ?catalog a npg:Catalog .
+  ?article a npg:Article .
+ OPTIONAL { ?article npg:hasCatalog ?catalog . } .
+ FILTER (!bound(?article))
+ }
+
+
+
+
+
+
+===========
+property_paths
+===========
+
+
+
+November 11, 2013
+http://jena.apache.org/documentation/query/property_paths.html
+
+PREFIX :     <http://example/>
+PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# Find the types of :x, following subClassOf
+SELECT *
+{
+   :x  rdf:type/rdfs:subClassOf*  ?t
+}
+
+
+
+
+
+===========
+November 13, 2013
+===========
+https://wiki.base22.com/display/btg/SPARQL+Query+Examples
+
+
+Find anything with a label
+---------------------------------
+The following query will find all triples where subject and object are joined by rdfs:label. In other words, anything that has been defined as having a label.
+
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?subject ?label
+WHERE { ?subject rdfs:label ?label } LIMIT 100
+
+In the graph http://www.w3.org/People/Berners-Lee/card, find me all subjects (?person) and objects (?name) linked with the foaf:name predicate. Then return all the values of ?name. In other words, find all names mentioned in Tim Berners-Lee's FOAF file.
+
+
+Find all subjects with a given object property
+---------------------------------
+
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX bc: <http://www.base22.com/ontologies/2010/5/bc.owl#>
+SELECT ?subject
+WHERE { ?subject bc:hasEmployer <http://www.base22.com/ontologies/2010/5/my-contacts.owl#IBM> } LIMIT 100
+
+
+From my contacts ontology, I find all IBMers (i.e. the hasEmployer predicate points to the individual IBM, which is an object of type Organization).
+Use multiple triple patterns to retrieve multiple properties
+---------------------------------
+
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX bc: <http://www.base22.com/ontologies/2010/5/bc.owl#>
+SELECT *
+WHERE {
+  ?subject bc:hasEmployer <http://www.base22.com/ontologies/2010/5/my-contacts.owl#IBM> .
+           ?subject bc:hasBusinessEmail ?email .
+}
+
+
+From my contacts ontology, I find all IBMers and return also their email address in the query results.
+Limit the number of results returned
+---------------------------------
+
+
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX bc: <http://www.base22.com/ontologies/2010/5/bc.owl#>
+SELECT *
+WHERE {
+  ?subject bc:hasEmployer <http://www.base22.com/ontologies/2010/5/my-contacts.owl#IBM> .
+           ?subject bc:hasBusinessEmail ?email .
+} LIMIT 5
+
+The LIMIT keyword is used after the WHERE clause, followed by a numerical value. In this case, of course, only 5 results are returned.
+ •	LIMIT is a solution modifier that limits the number of rows returned from a query. SPARQL has two other solution modifiers:
+	 •	ORDER BY for sorting query solutions on the value of one or more variables
+	 •	OFFSET, used in conjunction with LIMIT and ORDER BY to take a slice of a sorted solution set (e.g. for paging)
+
+
+Query from a particular graph on the web
+---------------------------------
+
+PREFIX foaf:  <http://xmlns.com/foaf/0.1/>
+PREFIX card: <http://www.w3.org/People/Berners-Lee/card#>
+SELECT ?homepage
+FROM <http://www.w3.org/People/Berners-Lee/card>
+WHERE {
+    card:i foaf:knows ?known .
+    ?known foaf:homepage ?homepage .
+}
+The FROM keyword lets us specify the target graph in the query itself. Of interest also in the query shown above: By using ?known as an object of one triple and the subject of another, we traverse multiple links in the graph.
+
+
+List all classes in a dataset
+---------------------------------
+
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT DISTINCT ?type
+WHERE {
+  ?s a ?type.
+}
+The SPARQL keyword a is a shortcut for the common predicate rdf:type, giving the class of a resource.
+
+
+Find subjects with a property value greater than
+Find me all landlocked countries with a population greater than 15 million
+---------------------------------
+
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX type: <http://dbpedia.org/class/yago/>
+PREFIX prop: <http://dbpedia.org/property/>
+
+SELECT ?country_name ?population
+WHERE {
+    ?country a type:LandlockedCountries ;
+             rdfs:label ?country_name ;
+             prop:populationEstimate ?population .
+    FILTER (?population > 15000000) .
+}
+
+You can try this one at the DBPedia SPARQL endpoint.
+ •	FILTER constraints use boolean conditions to filter out unwanted query results.
+ •	Shortcut: a semicolon ( can be used to separate two triple patterns that share the same subject. (?country is the shared subject above.)
+ •	rdfs:label is a common predicate for giving a human-friendly label to a resource.
+
+
+
+Order by the highest population
+---------------------------------
+
+Here's a similar query for DBPedia - this time, ordered by highest population first and filtered by language ("en").
+
+PREFIX type: <http://dbpedia.org/class/yago/>
+PREFIX prop: <http://dbpedia.org/property/>
+SELECT ?country_name ?population
+WHERE {
+    ?country a type:LandlockedCountries ;
+             rdfs:label ?country_name ;
+             prop:populationEstimate ?population .
+    FILTER (?population > 15000000 && langMatches(lang(?country_name), "en")) .
+}
+ORDER BY DESC(?population)
+
+ASK - Is the Amazon river longer than the Nile river?
+
+You can also try this one against DBPedia...
+
+PREFIX prop: <http://dbpedia.org/property/>
+ASK
+{
+  <http://dbpedia.org/resource/Amazon_River> prop:length ?amazon .
+  <http://dbpedia.org/resource/Nile> prop:length ?nile .
+  FILTER(?amazon > ?nile) .
+}
+
+The answer is: false.
+Note: The WHERE keyword is optional--not only in ASK queries but in all SPARQL queries.
+Paging
+
+
+
+
+Retrieve the second page of names and emails of people in Tim Berners-Lee's FOAF file, given that each page has 10 people. Try this on ARQ.
+---------------------------------
+
+PREFIX foaf:  <http://xmlns.com/foaf/0.1/>
+SELECT ?name ?email
+FROM <http://www.w3.org/People/Berners-Lee/card>
+WHERE {
+    {      SELECT DISTINCT ?person ?name WHERE {
+        ?person foaf:name ?name
+      } ORDER BY ?name LIMIT 10 OFFSET 10    }
+    OPTIONAL { ?person foaf:mbox ?email }
+}
+
+
+
+
+Negation
+---------------------------------
+
+Find the person entries in Tim Berners-Lee's FOAF file that do not contain a URL for the person's FOAF file. Try this on ARQ.
+
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?name
+FROM <http://www.w3.org/People/Berners-Lee/card>
+WHERE {
+  ?person a foaf:Person ; foaf:name ?name .
+  MINUS { ?person rdfs:seeAlso ?url }
+}
+
+
+
+
+
+
+
+Federate data from 2 endpoints
+---------------------------------
+
+Find the birth dates of all of the actors in Star Trek: The Motion Picture. Try this on ARQ.
+
+PREFIX movie: <http://data.linkedmdb.org/resource/movie/>
+PREFIX dbpedia: <http://dbpedia.org/ontology/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+SELECT ?actor_name ?birth_date
+FROM <http://www.w3.org/People/Berners-Lee/card> # placeholder graph
+WHERE {
+  SERVICE <http://data.linkedmdb.org/sparql> {
+    <http://data.linkedmdb.org/resource/film/675> movie:actor ?actor .
+    ?actor movie:actor_name ?actor_name
+  }
+  SERVICE <http://dbpedia.org/sparql> {
+    ?actor2 a dbpedia:Actor ; foaf:name ?actor_name_en ; dbpedia:birthDate ?birth_date .
+    FILTER(STR(?actor_name_en) = ?actor_name)
+  }
+}
+
+
+The SERVICE keyword is used to send part of a query against a remote SPARQL endpoint.
+
+
+
+
+
+
+SUBQUERY:
+Show number of articles that have N number of subjects for a specific journal
+---------------------------------
+select ?count (count (?a) as ?totalcount)
+where
+{
+
+  {
+    SELECT distinct ?a (count (?s) as ?count)
+    WHERE
+    {
+         ?a npg:hasSubject ?s .
+         ?a npg:hasJournal <http://ns.nature.com/journals/nchem> .
+    } GROUP BY ?a
+  }
+
+}  GROUP BY ?count
+
+
+
+
+
+
+
+
+
+
+
+
