@@ -3,9 +3,15 @@
 
 A command line SPARQL console. Works with endpoints as a well as local/remote graphs. 
 
+
+### Status
+
+Prototype. Runs but largely untested. 
+
+
 ### How-to
 
-Suggested way:
+Suggested:
 
 - Install via  `python setup.py install` then call `sparql-cli`
 
